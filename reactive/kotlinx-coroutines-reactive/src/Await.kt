@@ -94,17 +94,19 @@ public suspend fun <T> Publisher<T>.awaitSingle(): T = awaitOne(Mode.SINGLE)
 public suspend fun <T> Publisher<T>.awaitSingleOrDefault(default: T): T = awaitOne(Mode.SINGLE_OR_DEFAULT, default)
 
 /**
- * Awaits for the single value from the given publisher or `null` value if none is emitted without blocking a thread and
- * returns the resulting value or throws the corresponding exception if this publisher had produced error.
+ * Awaits the single value from the given observable without blocking the thread and returns the resulting value, or, if
+ * this observable has produced an error, throws the corresponding exception. If more than one value or none were
+ * produced by the publisher, `null` is returned.
  *
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
- * immediately resumes with [CancellationException].
- *
- * @throws NoSuchElementException if publisher does not emit any value
- * @throws IllegalArgumentException if publisher emits more than one value
+ * If the [Job] of the current coroutine is cancelled or completed while the suspending function is waiting, this
+ * function immediately cancels its [Subscription] and resumes with [CancellationException].
  */
-public suspend fun <T> Publisher<T>.awaitSingleOrNull(): T = awaitOne(Mode.SINGLE_OR_DEFAULT)
+public suspend fun <T> Publisher<T>.awaitSingleOrNull(): T? = try {
+    awaitOne(Mode.SINGLE_OR_DEFAULT)
+} catch (e: java.lang.IllegalArgumentException) {
+    null
+}
 
 /**
  * Awaits for the single value from the given publisher or call [defaultValue] to get a value if none is emitted without blocking a thread and
